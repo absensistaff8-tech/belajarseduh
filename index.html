@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F&B Operational Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800 font-sans min-h-screen p-4 flex flex-col items-center justify-start">
+
+    <div id="loginView" class="w-full max-w-sm bg-white rounded-xl shadow-lg p-6 mt-12 border border-gray-200">
+      <h2 class="text-2xl font-black text-center text-gray-900 tracking-tight uppercase">F&B Engine Portal</h2>
+      <p class="text-xs text-gray-400 text-center mt-1 uppercase tracking-wider">Operational Training System</p>
+      
+      <form id="formLogin" onsubmit="executeLogin(event)" class="mt-6">
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-2 text-center">Otorisasi PIN Staf</label>
+        <input type="password" id="pinInput" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-3xl tracking-widest font-black focus:outline-none focus:border-black mb-4 transition" placeholder="••••" maxlength="4" required inputmode="numeric">
+        <button type="submit" id="btnLogin" class="w-full bg-black hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-lg transition tracking-wide uppercase text-sm">Validasi Akses</button>
+      </form>
+      <div id="notifLogin" class="mt-4 font-bold text-center hidden p-3 rounded-lg text-xs uppercase tracking-wide"></div>
+    </div>
+
+    <div id="materiView" class="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200 hidden mt-4 mb-8">
+      
+      <div class="bg-black text-white p-4 flex justify-between items-center border-b border-gray-800">
+        <div>
+          <h2 id="judulModulDisplay" class="text-sm font-black uppercase tracking-wide">Memuat Data...</h2>
+          <p id="namaStafDisplay" class="text-xs text-gray-400 font-semibold mt-0.5">STAF: -</p>
+        </div>
+        <button onclick="executeLogout()" class="text-xs bg-red-700 hover:bg-red-800 font-bold px-3 py-1.5 rounded transition uppercase tracking-wider">Logout</button>
+      </div>
+
+      <div class="aspect-video bg-gray-900">
+        <iframe id="videoPlayer" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+      </div>
+
+      <div class="p-4 bg-gray-50">
+        <div class="bg-neutral-900 text-neutral-100 p-3 rounded-lg mb-4 text-xs border border-neutral-800">
+          <p class="font-bold text-amber-400 uppercase tracking-wide mb-1">Briefing Target Teknis:</p>
+          <p id="teksSopDisplay" class="italic text-neutral-300">Menunggu sinkronisasi database...</p>
+        </div>
+
+        <form id="formKuis" onsubmit="executeKuisSubmit(event)">
+          <input type="hidden" id="sessionPin">
+          <input type="hidden" id="sessionNama">
+          <input type="hidden" id="sessionModulId">
+
+          <div id="dynamicKuisArea" class="space-y-4"></div>
+
+          <button type="submit" id="btnKuis" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-lg transition text-sm uppercase tracking-wider mt-5 hidden shadow-md">Kirim Jawaban Evaluasi</button>
+        </form>
+        
+        <div id="notifKuis" class="mt-4 font-bold text-center hidden p-4 rounded-lg text-xs border"></div>
+      </div>
+    </div>
+
+    <script>
+      // ========================================================================
+      // PERHATIAN: GANTI TEKS DI BAWAH INI DENGAN URL WEB APP APPS SCRIPT ANDA
+      // ========================================================================
+      const API_URL = "TARUH_URL_APPS_SCRIPT_ANDA_DI_SINI";
+      
+      // 1. KONTROL LOGIN VIA FETCH API
+      function executeLogin(event) {
+        event.preventDefault();
+        var pin = document.getElementById('pinInput').value;
+        var btn = document.getElementById('btnLogin');
+        var notif = document.getElementById('notifLogin');
+        
+        btn.disabled = true;
+        btn.innerText = "MEMVERIFIKASI...";
+        
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ aksi: "login", pin: pin })
+        })
+        .then(response => response.json())
+        .then(respon => {
+          if(respon.status) {
+            notif.classList.add('hidden');
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('materiView').classList.remove('hidden');
+            
+            document.getElementById('namaStafDisplay').innerText = "STAF: " + respon.nama.toUpperCase();
+            document.getElementById('sessionPin').value = pin;
+            document.getElementById('sessionNama').value = respon.nama;
+            
+            pullDynamicMateri();
+          } else {
+            notif.innerText = respon.pesan;
+            notif.className = "mt-4 font-bold text-center p-3 bg-red-100 text-red-800 border border-red-200 rounded-lg text-xs uppercase tracking-wide";
+            notif.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerText = "VALIDASI AKSES";
+          }
+        })
+        .catch(error => {
+          notif.innerText = "GAGAL TERHUBUNG KE SERVER. CEK KONEKSI.";
+          notif.className = "mt-4 font-bold text-center p-3 bg-red-100 text-red-800 border border-red-200 rounded-lg text-xs uppercase tracking-wide";
+          notif.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerText = "VALIDASI AKSES";
+        });
+      }
+
+      // 2. AMBIL DATA MATERI VIA FETCH API
+      function pullDynamicMateri() {
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ aksi: "ambil_materi" })
+        })
+        .then(response => response.json())
+        .then(respon => {
+          if(respon.status && respon.data) {
+            buildMateriUI(respon.data);
+          }
+        })
+        .catch(error => console.error("Error fetching materi:", error));
+      }
+
+      // 3. GENERATOR UI DARI JSON
+      function buildMateriUI(dataModul) {
+        var judulDisplay = document.getElementById('judulModulDisplay');
+        if (!dataModul || dataModul.length === 0) {
+          judulDisplay.innerText = "BELUM ADA MATERI AKTIF";
+          return;
+        }
+
+        var modul = dataModul[0]; // Merender baris pertama materi
+
+        judulDisplay.innerText = "MODUL " + modul.id + ": " + modul.judul.toUpperCase();
+        document.getElementById('videoPlayer').src = modul.videoUrl;
+        document.getElementById('sessionModulId').value = modul.id;
+        document.getElementById('teksSopDisplay').innerText = modul.materi ? modul.materi : "Ikuti instruksi operasional pada video.";
+
+        var htmlKuis = `
+          <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+            <p class="font-bold text-xs uppercase text-gray-400 tracking-wider mb-2">Evaluasi 01</p>
+            <label class="block font-bold text-sm text-gray-900 mb-3">${modul.soal1.tanya}</label>
+            <div class="space-y-2">
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q1" value="${modul.soal1.opsiA}" required class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal1.opsiA}</label>
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q1" value="${modul.soal1.opsiB}" class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal1.opsiB}</label>
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q1" value="${modul.soal1.opsiC}" class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal1.opsiC}</label>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+            <p class="font-bold text-xs uppercase text-gray-400 tracking-wider mb-2">Evaluasi 02</p>
+            <label class="block font-bold text-sm text-gray-900 mb-3">${modul.soal2.tanya}</label>
+            <div class="space-y-2">
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q2" value="${modul.soal2.opsiA}" required class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal2.opsiA}</label>
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q2" value="${modul.soal2.opsiB}" class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal2.opsiB}</label>
+              <label class="flex items-center text-sm p-2 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q2" value="${modul.soal2.opsiC}" class="mr-3 h-4 w-4 text-black focus:ring-black"> ${modul.soal2.opsiC}</label>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('dynamicKuisArea').innerHTML = htmlKuis;
+        document.getElementById('btnKuis').classList.remove('hidden');
+      }
+
+      // 4. KONTROL EVALUASI KUIS VIA FETCH API
+      function executeKuisSubmit(event) {
+        event.preventDefault();
+        var btn = document.getElementById('btnKuis');
+        var notif = document.getElementById('notifKuis');
+        
+        btn.disabled = true;
+        btn.innerText = "MENGHITUNG SKOR...";
+
+        var payload = {
+          aksi: "kuis",
+          pin: document.getElementById('sessionPin').value,
+          nama: document.getElementById('sessionNama').value,
+          modulId: document.getElementById('sessionModulId').value,
+          jawaban1: document.querySelector('input[name="q1"]:checked').value,
+          jawaban2: document.querySelector('input[name="q2"]:checked').value
+        };
+
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(respon => {
+          notif.classList.remove('hidden');
+          if (respon.status === "LULUS") {
+            notif.className = "mt-4 p-4 bg-green-50 text-green-800 border-green-200 rounded-lg text-xs font-semibold text-center shadow-inner";
+            notif.innerText = respon.pesan;
+            btn.classList.add('hidden'); 
+          } else {
+            notif.className = "mt-4 p-4 bg-red-50 text-red-800 border-red-200 rounded-lg text-xs font-semibold text-center shadow-inner";
+            notif.innerText = respon.pesan;
+            btn.disabled = false;
+            btn.innerText = "KIRIM ULANG JAWABAN";
+          }
+        })
+        .catch(error => {
+          notif.innerText = "TERJADI KESALAHAN JARINGAN.";
+          notif.className = "mt-4 p-4 bg-red-50 text-red-800 border-red-200 rounded-lg text-xs font-semibold text-center shadow-inner";
+          notif.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerText = "KIRIM ULANG JAWABAN";
+        });
+      }
+
+      // 5. KONTROL LOGOUT
+      function executeLogout() {
+        location.reload(); // Reload halaman untuk mereset seluruh state sesi
+      }
+    </script>
+  </body>
+</html>
