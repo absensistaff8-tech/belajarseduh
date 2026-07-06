@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   try {
     const { peran } = JSON.parse(req.body);
     const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_KEY;
+    const key = process.env.SUPABASE_SERVICE_KEY;
 
     const response = await fetch(`${url}/rest/v1/Modules?target_peran=in.(${peran},ALL)&select=*`, {
       headers: { "apikey": key, "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }
