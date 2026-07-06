@@ -208,7 +208,7 @@
         document.getElementById('notifKuis').classList.add('hidden');
       }
 
-      // 3. PENILAIAN & INSERT LOG KELULUSAN KE TABEL PROGRESS SUPABASE
+      // 3. PENILAIAN & INSERT LOG KELULUSAN (VERSI KEBAL CRASH)
       function executeKuisSubmit(event) {
         event.preventDefault();
         var btn = document.getElementById('btnKuis');
@@ -216,55 +216,63 @@
         btn.disabled = true;
         btn.innerText = "MENGANALISIS DATA KELULUSAN...";
 
-        var modulActive = globalStorageModul.find(m => m.id === document.getElementById('sessionModulId').value);
-        
-        var jwb1 = document.querySelector('input[name="q1"]:checked').value;
-        var jwb2 = document.querySelector('input[name="q2"]:checked').value;
+        try {
+          // Eksekusi toleransi tipe data dengan '==' (mengantisipasi ID berupa angka int8 dari Supabase)
+          var sessionModulId = document.getElementById('sessionModulId').value;
+          var modulActive = globalStorageModul.find(m => m.id == sessionModulId);
+          
+          if (!modulActive) throw new Error("Gagal membaca identitas modul dari memori database.");
 
-        var skor = 0;
-        if (jwb1.trim() === modulActive.kunci1.trim()) skor += 50;
-        if (jwb2.trim() === modulActive.kunci2.trim()) skor += 50;
+          var jwb1 = document.querySelector('input[name="q1"]:checked').value;
+          var jwb2 = document.querySelector('input[name="q2"]:checked').value;
 
-        var statusLulus = (skor === 100) ? "LULUS" : "GAGAL";
+          var skor = 0;
+          if (jwb1.trim() == modulActive.kunci1.trim()) skor += 50;
+          if (jwb2.trim() == modulActive.kunci2.trim()) skor += 50;
 
-        var payloadLog = {
-          nama: document.getElementById('sessionNama').value,
-          pin: document.getElementById('sessionPin').value,
-          modul_id: "Modul " + modulActive.id,
-          skor: skor,
-          status: statusLulus
-        };
+          var statusLulus = (skor === 100) ? "LULUS" : "GAGAL";
 
-        // Kirim (POST) log data ke tabel Progress Supabase
-        fetch(`${SUPABASE_URL}/rest/v1/Progress`, {
-          method: 'POST',
-          headers: getHeaders,
-          body: JSON.stringify(payloadLog)
-        })
-        .then(() => {
+          var payloadLog = {
+            nama: document.getElementById('sessionNama').value,
+            pin: document.getElementById('sessionPin').value,
+            modul_id: "Modul " + modulActive.id,
+            skor: skor,
+            status: statusLulus
+          };
+
+          // Tembak data ke Supabase
+          fetch(`${SUPABASE_URL}/rest/v1/Progress`, {
+            method: 'POST',
+            headers: getHeaders,
+            body: JSON.stringify(payloadLog)
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Ditolak oleh Supabase (Cek RLS di Tabel Progress).");
+            
+            notif.classList.remove('hidden');
+            if (skor === 100) {
+              notif.className = "mt-4 p-4 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold text-center";
+              notif.innerText = "SKOR 100. Kompetensi Peran Terpenuhi! Riwayat Anda telah terekam aman di database.";
+              btn.classList.add('hidden');
+            } else {
+              notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center";
+              notif.innerText = "Skor Anda " + skor + ". Standar operasional menuntut nilai sempurna (100)! Mengulang.";
+              btn.disabled = false;
+              btn.innerText = "KIRIM EVALUASI KOMPETENSI";
+            }
+          })
+          .catch(err => {
+            throw err;
+          });
+
+        } catch (err) {
+          // Memuntahkan laporan error ke layar agar tidak macet di "Menganalisis..."
+          notif.innerText = "SYSTEM ERROR: " + err.message;
+          notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center shadow-inner";
           notif.classList.remove('hidden');
-          if (skor === 100) {
-            notif.className = "mt-4 p-4 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold text-center";
-            notif.innerText = "SKOR 100. Kompetensi Peran Terpenuhi! Riwayat Anda telah terekam aman di database.";
-            btn.classList.add('hidden');
-          } else {
-            notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center";
-            notif.innerText = "Skor Anda " + skor + ". Standar operasional menuntut nilai sempurna (100)! Mengulang.";
-            btn.disabled = false;
-            btn.innerText = "KIRIM EVALUASI KOMPETENSI";
-          }
-        });
-      }
-
-      function kembaliKeDashboard() {
-        document.getElementById('materiView').classList.add('hidden');
-        document.getElementById('videoPlayer').src = "";
-        document.getElementById('formKuis').reset();
-        document.getElementById('dashboardView').classList.remove('hidden');
-      }
-
-      function executeLogout() {
-        location.reload();
+          btn.disabled = false;
+          btn.innerText = "KIRIM EVALUASI KOMPETENSI";
+        }
       }
     </script>
   </body>
