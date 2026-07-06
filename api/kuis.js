@@ -30,16 +30,15 @@ export default async function handler(req, res) {
       throw new Error("Kolom 'kunci1' atau 'kunci2' tidak ditemukan. Cek ejaan huruf di tabel Modules Supabase Anda.");
     }
 
+    // (Di bawah baris const activeModul = modules[0];)
     let skor = 0;
     
-    // Konversi kaku menjadi teks untuk mencegah benturan tipe data angka/null
-    const k1 = (activeModul.kunci1 || "").toString().trim();
-    const k2 = (activeModul.kunci2 || "").toString().trim();
-    const jwb1 = (payload.jawaban1 || "").toString().trim();
-    const jwb2 = (payload.jawaban2 || "").toString().trim();
-
-    if (jwb1 === k1) skor += 50;
-    if (jwb2 === k2) skor += 50;
+    // Tarik 5 jawaban dari payload (pastikan HTML mengirim 5 jawaban)
+    if ((payload.jawaban1 || "").toString().trim() === (activeModul.kunci1 || "").toString().trim()) skor += 20;
+    if ((payload.jawaban2 || "").toString().trim() === (activeModul.kunci2 || "").toString().trim()) skor += 20;
+    if ((payload.jawaban3 || "").toString().trim() === (activeModul.kunci3 || "").toString().trim()) skor += 20;
+    if ((payload.jawaban4 || "").toString().trim() === (activeModul.kunci4 || "").toString().trim()) skor += 20;
+    if ((payload.jawaban5 || "").toString().trim() === (activeModul.kunci5 || "").toString().trim()) skor += 20;
 
     const statusLulus = (skor === 100) ? "LULUS" : "GAGAL";
 
