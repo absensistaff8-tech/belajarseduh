@@ -256,6 +256,7 @@
         var notif = document.getElementById('notifKuis');
         btn.disabled = true;
         btn.innerText = "MENGANALISIS DATA KELULUSAN...";
+      }
 
         var payload = {
           pin: document.getElementById('sessionPin').value,
@@ -265,7 +266,8 @@
           jawaban2: document.querySelector('input[name="q2"]:checked').value,
           jawaban3: document.querySelector('input[name="q3"]:checked').value,
           jawaban4: document.querySelector('input[name="q4"]:checked').value,
-          jawaban5: document.querySelector('input[name="q5"]:checked').value
+          jawaban5: document.querySelector('input[name="q5"]:checked').value,
+      
         };
 
         fetch('/api/kuis', {
