@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const activeModul = modules[0];
 
     // Cek absolut: pastikan kolom kunci1 dan kunci2 benar-benar ada di tabel Supabase
-    if (activeModul.kunci1 === undefined || activeModul.kunci2 === undefined) {
+    if (activeModul.kunci1 === undefined || activeModul.kunci2 === undefined || activeModul.kunci3 === undefined || activeModul.kunci4 === undefined || activeModul.kunci5 === undefined) {
       throw new Error("Kolom 'kunci1' atau 'kunci2' tidak ditemukan. Cek ejaan huruf di tabel Modules Supabase Anda.");
     }
 
