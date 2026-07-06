@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   try {
     const payload = JSON.parse(req.body);
     const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_KEY;
+    const key = process.env.SUPABASE_SERVICE_KEY;
 
     // 1. Ambil data kunci dengan penangkap error presisi
     const modResponse = await fetch(`${url}/rest/v1/Modules?id=eq.${payload.modulId}&select=*`, {
