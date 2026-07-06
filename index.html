@@ -239,13 +239,18 @@
             status: statusLulus
           };
 
+          // Tembak data ke Supabase dengan penyadap error asli
           fetch(`${SUPABASE_URL}/rest/v1/Progress`, {
             method: 'POST',
             headers: getHeaders,
             body: JSON.stringify(payloadLog)
           })
-          .then(res => {
-            if (!res.ok) throw new Error("Pengiriman ditolak Supabase (Pastikan RLS pada tabel Progress non-aktif).");
+          .then(async res => {
+            if (!res.ok) {
+              // Jika gagal, paksa Supabase memuntahkan alasan teknisnya
+              const errData = await res.json();
+              throw new Error("ALASAN SUPABASE: " + JSON.stringify(errData));
+            }
             
             notif.classList.remove('hidden');
             if (skor === 100) {
@@ -261,7 +266,7 @@
           })
           .catch(err => {
             notif.innerText = "SYSTEM ERROR: " + err.message;
-            notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center shadow-inner";
+            notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center shadow-inner break-words";
             notif.classList.remove('hidden');
             btn.disabled = false;
             btn.innerText = "KIRIM EVALUASI KOMPETENSI";
