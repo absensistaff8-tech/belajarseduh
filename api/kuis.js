@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const key = process.env.SUPABASE_SERVICE_KEY;
 
     // 1. Ambil data kunci dengan penangkap error presisi
-    const modResponse = await fetch(`${url}/rest/v1/Modules?id=eq.${payload.modul_id}&select=*`, {
+    const modResponse = await fetch(`${url}/rest/v1/Modules?id=eq.${payload.modulId}&select=*`, {
       headers: { "apikey": key, "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }
     });
 
