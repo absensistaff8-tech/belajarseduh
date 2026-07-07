@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COGS Engine | EGGY NUGRAHA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #020617; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen p-6 pb-20">
+
+  <!-- HEADER -->
+  <header class="mb-8 border-b border-slate-800 pb-4">
+    <h1 class="text-2xl font-black text-white tracking-tighter">EGGY<span class="text-amber-500">NUGRAHA</span></h1>
+    <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mt-1">Menu Engineering & COGS Analytics</p>
+  </header>
+
+  <!-- KONTAINER DATA -->
+  <main>
+    <div class="flex justify-between items-end mb-4">
+      <h2 class="text-sm font-bold text-slate-300 uppercase tracking-widest">Laporan Margin Aktual</h2>
+      <button onclick="tarikDataCogs()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold px-3 py-1.5 rounded transition uppercase border border-slate-700">Refresh Data</button>
+    </div>
+
+    <!-- AREA KARTU MENU (Diisi otomatis oleh JavaScript) -->
+    <div id="cogsContainer" class="space-y-4">
+      <p class="text-xs text-slate-500 italic animate-pulse">Menghitung HPP dan Margin dari Server...</p>
+    </div>
+  </main>
+
+  <script>
+    // FUNGSI TARIK DAN RENDER DATA
+    function tarikDataCogs() {
+      var kontainer = document.getElementById('cogsContainer');
+      kontainer.innerHTML = "<p class='text-xs text-slate-500 italic animate-pulse'>Menyinkronkan data matriks...</p>";
+
+      fetch('/api/cogs')
+        .then(res => res.json())
+        .then(respon => {
+          if (!respon.status) throw new Error(respon.pesan);
+          
+          if (respon.data.length === 0) {
+            kontainer.innerHTML = "<p class='text-xs text-slate-500 italic'>Belum ada data resep yang dikalkulasi.</p>";
+            return;
+          }
+
+          var html = "";
+          respon.data.forEach(menu => {
+            // Logika Warna Indikator
+            var warnaStatus = menu.status === "SEHAT" ? "bg-emerald-950 text-emerald-400 border-emerald-800" : "bg-red-950 text-red-400 border-red-800 animate-pulse";
+            var teksStatus = menu.status === "SEHAT" ? "Margin Aman" : "BOCOR - HPP TINGGI!";
+            var warnaPersen = menu.status === "SEHAT" ? "text-emerald-400" : "text-red-500 font-black";
+
+            // Format Uang Rupiah
+            var formatHarga = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.harga_jual);
+            var formatHpp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.total_hpp);
+
+            html += `
+              <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg relative overflow-hidden">
+                <!-- Garis indikator di sebelah kiri -->
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 ${menu.status === "SEHAT" ? "bg-emerald-500" : "bg-red-500"}"></div>
+                
+                <div class="pl-2">
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <span class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">ID: ${menu.id_menu}</span>
+                      <h3 class="text-lg font-bold text-white">${menu.nama_menu}</h3>
+                    </div>
+                    <span class="text-[9px] font-bold px-2 py-1 rounded border uppercase tracking-wider ${warnaStatus}">
+                      ${teksStatus}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4 mt-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Harga Jual</p>
+                      <p class="text-sm font-bold text-white">${formatHarga}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total HPP</p>
+                      <p class="text-sm font-bold text-slate-200">${formatHpp}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Batas Maks</p>
+                      <p class="text-sm font-bold text-slate-400">${menu.target_maks}%</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">HPP Aktual</p>
+                      <p class="text-lg font-black ${warnaPersen}">${menu.cogs_aktual_persen}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          
+          kontainer.innerHTML = html;
+        })
+        .catch(err => {
+          kontainer.innerHTML = `<p class="text-xs text-red-500 font-bold bg-red-950/30 p-3 rounded border border-red-900">Gagal memuat: ${err.message}</p>`;
+        });
+    }
+
+    // Jalankan fungsi otomatis saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", tarikDataCogs);
+  </script>
+</body>
+</html>
