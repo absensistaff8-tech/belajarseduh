@@ -3,108 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COGS Engine | EGGY NUGRAHA</title>
+  <title>Executive Backoffice | Eggy Nugraha</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { background-color: #020617; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-  </style>
 </head>
-<body class="min-h-screen p-6 pb-20">
+<body class="bg-slate-950 text-slate-200 min-h-screen">
 
-  <!-- HEADER -->
-  <header class="mb-8 border-b border-slate-800 pb-4">
-    <h1 class="text-2xl font-black text-white tracking-tighter">EGGY<span class="text-amber-500">NUGRAHA</span></h1>
-    <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mt-1">Menu Engineering & COGS Analytics</p>
-  </header>
+  <!-- NAVBAR -->
+  <nav class="border-b border-slate-800 bg-slate-900/50 p-4 sticky top-0 backdrop-blur-md z-50">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-black tracking-tighter text-white">BACKOFFICE <span class="text-amber-500 italic">V1</span></h1>
+      <div id="statusBadge" class="text-[9px] font-bold px-2 py-1 rounded bg-emerald-900/30 text-emerald-500 border border-emerald-900">SYSTEM ONLINE</div>
+    </div>
+  </nav>
 
-  <!-- KONTAINER DATA -->
-  <main>
-    <div class="flex justify-between items-end mb-4">
-      <h2 class="text-sm font-bold text-slate-300 uppercase tracking-widest">Laporan Margin Aktual</h2>
-      <button onclick="tarikDataCogs()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold px-3 py-1.5 rounded transition uppercase border border-slate-700">Refresh Data</button>
+  <main class="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+    
+    <!-- KPI SUMMARY -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+        <p class="text-[10px] uppercase text-slate-500 font-bold">Total Menu</p>
+        <p id="kpiTotal" class="text-2xl font-black text-white">0</p>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+        <p class="text-[10px] uppercase text-slate-500 font-bold">Menu Bocor</p>
+        <p id="kpiBocor" class="text-2xl font-black text-red-500">0</p>
+      </div>
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 col-span-2">
+        <p class="text-[10px] uppercase text-slate-500 font-bold">Performa Profitability</p>
+        <div class="w-full bg-slate-800 h-2 mt-2 rounded-full overflow-hidden">
+          <div id="kpiBar" class="bg-amber-500 h-full w-0 transition-all"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- AREA KARTU MENU (Diisi otomatis oleh JavaScript) -->
-    <div id="cogsContainer" class="space-y-4">
-      <p class="text-xs text-slate-500 italic animate-pulse">Menghitung HPP dan Margin dari Server...</p>
+    <!-- TABEL UTAMA -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-950 text-slate-400 uppercase">
+          <tr>
+            <th class="p-4">Menu</th>
+            <th class="p-4 text-right">Harga</th>
+            <th class="p-4 text-right">HPP</th>
+            <th class="p-4 text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody id="cogsTableBody" class="divide-y divide-slate-800">
+          <!-- Data diisi JS -->
+        </tbody>
+      </table>
     </div>
   </main>
 
   <script>
-    // FUNGSI TARIK DAN RENDER DATA
-    function tarikDataCogs() {
-      var kontainer = document.getElementById('cogsContainer');
-      kontainer.innerHTML = "<p class='text-xs text-slate-500 italic animate-pulse'>Menyinkronkan data matriks...</p>";
+    async function loadDashboard() {
+      const res = await fetch('/api/cogs');
+      const json = await res.json();
+      const data = json.data;
 
-      fetch('/api/cogs')
-        .then(res => res.json())
-        .then(respon => {
-          if (!respon.status) throw new Error(respon.pesan);
-          
-          if (respon.data.length === 0) {
-            kontainer.innerHTML = "<p class='text-xs text-slate-500 italic'>Belum ada data resep yang dikalkulasi.</p>";
-            return;
-          }
+      document.getElementById('kpiTotal').innerText = data.length;
+      const bocor = data.filter(m => m.status === "BOCOR").length;
+      document.getElementById('kpiBocor').innerText = bocor;
+      document.getElementById('kpiBar').style.width = ((data.length - bocor) / data.length * 100) + "%";
 
-          var html = "";
-          respon.data.forEach(menu => {
-            // Logika Warna Indikator
-            var warnaStatus = menu.status === "SEHAT" ? "bg-emerald-950 text-emerald-400 border-emerald-800" : "bg-red-950 text-red-400 border-red-800 animate-pulse";
-            var teksStatus = menu.status === "SEHAT" ? "Margin Aman" : "BOCOR - HPP TINGGI!";
-            var warnaPersen = menu.status === "SEHAT" ? "text-emerald-400" : "text-red-500 font-black";
-
-            // Format Uang Rupiah
-            var formatHarga = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.harga_jual);
-            var formatHpp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.total_hpp);
-
-            html += `
-              <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-lg relative overflow-hidden">
-                <!-- Garis indikator di sebelah kiri -->
-                <div class="absolute left-0 top-0 bottom-0 w-1.5 ${menu.status === "SEHAT" ? "bg-emerald-500" : "bg-red-500"}"></div>
-                
-                <div class="pl-2">
-                  <div class="flex justify-between items-start mb-3">
-                    <div>
-                      <span class="text-[9px] font-bold text-slate-500 tracking-widest uppercase block mb-1">ID: ${menu.id_menu}</span>
-                      <h3 class="text-lg font-bold text-white">${menu.nama_menu}</h3>
-                    </div>
-                    <span class="text-[9px] font-bold px-2 py-1 rounded border uppercase tracking-wider ${warnaStatus}">
-                      ${teksStatus}
-                    </span>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4 mt-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <div>
-                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Harga Jual</p>
-                      <p class="text-sm font-bold text-white">${formatHarga}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total HPP</p>
-                      <p class="text-sm font-bold text-slate-200">${formatHpp}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Batas Maks</p>
-                      <p class="text-sm font-bold text-slate-400">${menu.target_maks}%</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">HPP Aktual</p>
-                      <p class="text-lg font-black ${warnaPersen}">${menu.cogs_aktual_persen}%</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          });
-          
-          kontainer.innerHTML = html;
-        })
-        .catch(err => {
-          kontainer.innerHTML = `<p class="text-xs text-red-500 font-bold bg-red-950/30 p-3 rounded border border-red-900">Gagal memuat: ${err.message}</p>`;
-        });
+      let rows = "";
+      data.forEach(m => {
+        rows += `
+          <tr class="hover:bg-slate-800/50 transition">
+            <td class="p-4 font-bold text-white">${m.nama_menu}</td>
+            <td class="p-4 text-right">${m.harga_jual.toLocaleString()}</td>
+            <td class="p-4 text-right font-mono">${m.cogs_aktual_persen}%</td>
+            <td class="p-4 text-center">
+              <span class="${m.status === 'SEHAT' ? 'text-emerald-500' : 'text-red-500'} font-bold uppercase text-[10px]">
+                ${m.status}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+      document.getElementById('cogsTableBody').innerHTML = rows;
     }
-
-    // Jalankan fungsi otomatis saat halaman dibuka
-    document.addEventListener("DOMContentLoaded", tarikDataCogs);
+    loadDashboard();
   </script>
 </body>
 </html>
