@@ -178,17 +178,23 @@
         kontainer.innerHTML = html;
       }
 
-      // ENGINE RENDER SOAL DINAMIS
+     // ENGINE RENDER SOAL DINAMIS (STANDAR KUNCI ALFABET)
       function renderSoal(nomor, soalTeks, opsiA, opsiB, opsiC) {
-        if (!soalTeks) return ""; // Lewati jika kolom soal kosong di Supabase
+        if (!soalTeks) return ""; 
         return `
           <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
             <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 0${nomor}</p>
             <label class="block font-medium text-sm text-slate-200 mb-3">${soalTeks}</label>
             <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiA}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiA}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiB}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiB}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiC}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiC}</label>
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition">
+                <input type="radio" name="q${nomor}" value="a" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiA}
+              </label>
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition">
+                <input type="radio" name="q${nomor}" value="b" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiB}
+              </label>
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition">
+                <input type="radio" name="q${nomor}" value="c" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiC}
+              </label>
             </div>
           </div>
         `;
