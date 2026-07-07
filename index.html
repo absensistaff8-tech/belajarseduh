@@ -64,13 +64,12 @@
         <div id="notifKuis" class="mt-4 font-bold text-center hidden p-4 rounded-xl text-xs border"></div>
       </div>
     </div>
-
+<!-- ================= LOGIKA AMAN UTUH FRONTEND (FINAL 5 SOAL & PENGUNCI) ================= -->
     <script>
-      // KUNCI SUPABASE DI SINI SUDAH DIHAPUS TOTAL. AMAN DARI INSPECT ELEMENT.
       var globalStorageModul = [];
       var activeModul = null;
 
-      // 1. OTORISASI PIN MENEMBAK BACKEND INTERNAL VERCEL
+      // 1. OTORISASI PIN 
       function executeLogin(event) {
         event.preventDefault();
         var pin = document.getElementById('pinInput').value;
@@ -112,10 +111,10 @@
         });
       }
 
-     // 2. TARIK MATERI BERDASARKAN PERAN & PIN VIA PROXY INTERNAL
+      // 2. TARIK MATERI BERDASARKAN PERAN & PIN VIA PROXY
       function pullMateriInternal(peran) {
         var kontainer = document.getElementById('listModulKontainer');
-        var pinStaf = document.getElementById('sessionPin').value; // Ambil PIN untuk cek progres
+        var pinStaf = document.getElementById('sessionPin').value;
         kontainer.innerHTML = "<p class='text-xs text-slate-400 animate-pulse text-center py-4'>Menyinkronkan materi peran & progres...</p>";
 
         fetch('/api/materi', {
@@ -126,12 +125,12 @@
         .then(respon => {
           if(respon.status && respon.data) {
             globalStorageModul = respon.data;
-            renderDashboardList(respon.data, respon.passed); // Kirim data lulus ke render
+            renderDashboardList(respon.data, respon.passed);
           }
         });
       }
 
-      // 3. RENDER DASHBOARD DENGAN LOGIKA PENGUNCI KAKU
+      // 3. RENDER DASHBOARD DENGAN LOGIKA PENGUNCI HIERARKI
       function renderDashboardList(dataModul, passedIds) {
         var kontainer = document.getElementById('listModulKontainer');
         if(dataModul.length === 0) {
@@ -141,8 +140,6 @@
         
         var html = "";
         dataModul.forEach((modul, indeks) => {
-          // LOGIKA HIERARKI: Modul pertama (0) otomatis terbuka.
-          // Modul berikutnya hanya terbuka JIKA modul sebelumnya sudah ada di passedIds.
           var isUnlocked = false;
           if (indeks === 0) {
             isUnlocked = true; 
@@ -154,9 +151,8 @@
           }
 
           if (isUnlocked) {
-            // RENDER KARTU TERBUKA (BISA DIKLIK)
             html += `
-              <div onclick="bukaRuangBelajar(${indeks})" class="bg-slate-900 p-4 border border-slate-700/50 rounded-xl hover:border-amber-500 transition cursor-pointer flex justify-between items-center group shadow-md">
+              <div onclick="bukaRuangBelajar(${indeks})" class="bg-slate-900 p-4 border border-slate-700/50 rounded-xl hover:border-amber-500 transition cursor-pointer flex justify-between items-center group shadow-md mb-3">
                 <div>
                   <span class="text-[10px] font-bold text-amber-400 tracking-widest uppercase block mb-0.5">MODUL ${modul.id}</span>
                   <span class="text-sm font-bold text-white group-hover:text-amber-400 transition">${modul.judul}</span>
@@ -165,9 +161,8 @@
               </div>
             `;
           } else {
-            // RENDER KARTU TERKUNCI MATI (TIDAK ADA FUNGSI ONCLICK, WARNA ABU-ABU)
             html += `
-              <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl flex justify-between items-center opacity-60 grayscale cursor-not-allowed shadow-inner">
+              <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl flex justify-between items-center opacity-60 grayscale cursor-not-allowed shadow-inner mb-3">
                 <div>
                   <span class="text-[10px] font-bold text-slate-500 tracking-widest uppercase block mb-0.5">MODUL ${modul.id} (TERKUNCI)</span>
                   <span class="text-sm font-bold text-slate-400">${modul.judul}</span>
@@ -182,8 +177,24 @@
         });
         kontainer.innerHTML = html;
       }
-      
 
+      // ENGINE RENDER SOAL DINAMIS
+      function renderSoal(nomor, soalTeks, opsiA, opsiB, opsiC) {
+        if (!soalTeks) return ""; // Lewati jika kolom soal kosong di Supabase
+        return `
+          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
+            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 0${nomor}</p>
+            <label class="block font-medium text-sm text-slate-200 mb-3">${soalTeks}</label>
+            <div class="space-y-2">
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiA}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiA}</label>
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiB}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiB}</label>
+              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q${nomor}" value="${opsiC}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${opsiC}</label>
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. BUKA RUANG BELAJAR (GENERATE 5 SOAL)
       function bukaRuangBelajar(indeks) {
         activeModul = globalStorageModul[indeks]; 
         var peran = document.getElementById('sessionPeran').value;
@@ -197,59 +208,19 @@
         document.getElementById('sessionModulId').value = activeModul.id;
         document.getElementById('teksSopDisplay').innerText = activeModul.materi ? activeModul.materi : "Ikuti SOP pada video.";
 
-        var htmlKuis = `
-          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner">
-            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 01</p>
-            <label class="block font-medium text-sm text-slate-200 mb-3">${activeModul.soal1}</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q1" value="${activeModul.opsi1a}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi1a}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q1" value="${activeModul.opsi1b}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi1b}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q1" value="${activeModul.opsi1c}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi1c}</label>
-            </div>
-          </div>
-          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
-            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 02</p>
-            <label class="block font-medium text-sm text-slate-200 mb-3">${activeModul.soal2}</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi2a}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi2a}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi2b}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi2b}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi2c}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi2c}</label>
-            </div>
-          </div>
-          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
-            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 02</p>
-            <label class="block font-medium text-sm text-slate-200 mb-3">${activeModul.soal3}</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi3a}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi3a}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi3b}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi3b}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi3c}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi3c}</label>
-            </div>
-          </div>
-          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
-            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 02</p>
-            <label class="block font-medium text-sm text-slate-200 mb-3">${activeModul.soal4}</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi4a}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi4a}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi4b}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi4b}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi4c}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi4c}</label>
-            </div>
-          </div>
-          <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner mt-4">
-            <p class="font-bold text-[10px] uppercase text-amber-500 tracking-wider mb-2">Evaluasi Penguasaan 02</p>
-            <label class="block font-medium text-sm text-slate-200 mb-3">${activeModul.soal5}</label>
-            <div class="space-y-2">
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi5a}" required class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi5a}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi5b}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi5b}</label>
-              <label class="flex items-center text-xs p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900 cursor-pointer transition"><input type="radio" name="q2" value="${activeModul.opsi5c}" class="mr-3 h-4 w-4 text-amber-500 focus:ring-0"> ${activeModul.opsi5c}</label>
-            </div>
-          </div>
-        `;
+        var htmlKuis = "";
+        htmlKuis += renderSoal(1, activeModul.soal1, activeModul.opsi1a, activeModul.opsi1b, activeModul.opsi1c);
+        htmlKuis += renderSoal(2, activeModul.soal2, activeModul.opsi2a, activeModul.opsi2b, activeModul.opsi2c);
+        htmlKuis += renderSoal(3, activeModul.soal3, activeModul.opsi3a, activeModul.opsi3b, activeModul.opsi3c);
+        htmlKuis += renderSoal(4, activeModul.soal4, activeModul.opsi4a, activeModul.opsi4b, activeModul.opsi4c);
+        htmlKuis += renderSoal(5, activeModul.soal5, activeModul.opsi5a, activeModul.opsi5b, activeModul.opsi5c);
+
         document.getElementById('dynamicKuisArea').innerHTML = htmlKuis;
         document.getElementById('btnKuis').classList.remove('hidden');
         document.getElementById('notifKuis').classList.add('hidden');
       }
 
-      // 3. KIRIM JAWABAN KE BACKEND SERVERLESS UNTUK EVALUASI DAN PENYIMPANAN
+      // 5. KIRIM JAWABAN (TOLERANSI SOAL KOSONG)
       function executeKuisSubmit(event) {
         event.preventDefault();
         var btn = document.getElementById('btnKuis');
@@ -257,45 +228,52 @@
         btn.disabled = true;
         btn.innerText = "MENGANALISIS DATA KELULUSAN...";
 
-        var payload = {
-          pin: document.getElementById('sessionPin').value,
-          nama: document.getElementById('sessionNama').value,
-          modulId: document.getElementById('sessionModulId').value,
-          jawaban1: document.querySelector('input[name="q1"]:checked').value,
-          jawaban2: document.querySelector('input[name="q2"]:checked').value,
-          jawaban3: document.querySelector('input[name="q3"]:checked').value,
-          jawaban4: document.querySelector('input[name="q4"]:checked').value,
-          jawaban5: document.querySelector('input[name="q5"]:checked').value
-        };
-      }
+        try {
+          var payload = {
+            pin: document.getElementById('sessionPin').value,
+            nama: document.getElementById('sessionNama').value,
+            modulId: document.getElementById('sessionModulId').value,
+            jawaban1: document.querySelector('input[name="q1"]:checked') ? document.querySelector('input[name="q1"]:checked').value : "",
+            jawaban2: document.querySelector('input[name="q2"]:checked') ? document.querySelector('input[name="q2"]:checked').value : "",
+            jawaban3: document.querySelector('input[name="q3"]:checked') ? document.querySelector('input[name="q3"]:checked').value : "",
+            jawaban4: document.querySelector('input[name="q4"]:checked') ? document.querySelector('input[name="q4"]:checked').value : "",
+            jawaban5: document.querySelector('input[name="q5"]:checked') ? document.querySelector('input[name="q5"]:checked').value : ""
+          };
 
-        fetch('/api/kuis', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(respon => {
-          if (!respon.status) throw new Error(respon.pesan);
-          
-          notif.classList.remove('hidden');
-          if (respon.skor === 100) {
-            notif.className = "mt-4 p-4 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold text-center";
-            notif.innerText = "SKOR 100. Kompetensi Peran Terpenuhi! Riwayat Anda terkunci di server belakang.";
-            btn.classList.add('hidden');
-          } else {
-            notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center";
-            notif.innerText = "Skor Anda " + respon.skor + ". Wajib mendapatkan nilai sempurna (100) untuk lolos!";
+          fetch('/api/kuis', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(respon => {
+            if (!respon.status) throw new Error(respon.pesan);
+            
+            notif.classList.remove('hidden');
+            if (respon.skor === 100) {
+              notif.className = "mt-4 p-4 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold text-center";
+              notif.innerText = "SKOR 100. Kompetensi Peran Terpenuhi! Riwayat Anda terkunci di server belakang.";
+              btn.classList.add('hidden');
+            } else {
+              notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center";
+              notif.innerText = "Skor Anda " + respon.skor + ". Wajib mendapatkan nilai sempurna (100) untuk lolos!";
+              btn.disabled = false;
+              btn.innerText = "KIRIM EVALUASI KOMPETENSI";
+            }
+          })
+          .catch(err => {
+            notif.innerText = "ERROR EVALUASI: " + err.message;
+            notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center shadow-inner";
+            notif.classList.remove('hidden');
             btn.disabled = false;
             btn.innerText = "KIRIM EVALUASI KOMPETENSI";
-          }
-        })
-        .catch(err => {
-          notif.innerText = "ERROR EVALUASI: " + err.message;
+          });
+        } catch (error) {
+          notif.innerText = "Pastikan semua opsi yang tampil telah dijawab!";
           notif.className = "mt-4 p-4 bg-red-950 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold text-center shadow-inner";
           notif.classList.remove('hidden');
           btn.disabled = false;
           btn.innerText = "KIRIM EVALUASI KOMPETENSI";
-        });
+        }
       }
 
       function kembaliKeDashboard() {
@@ -310,5 +288,6 @@
         location.reload();
       }
     </script>
+   
   </body>
 </html>
