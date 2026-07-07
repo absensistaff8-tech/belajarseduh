@@ -288,6 +288,10 @@
         document.getElementById('videoPlayer').src = "";
         document.getElementById('formKuis').reset();
         document.getElementById('dashboardView').classList.remove('hidden');
+        
+        // SUNTIKAN EKSEKUSI: Paksa mesin menarik ulang data gembok terbaru dari server
+        var peranAktif = document.getElementById('sessionPeran').value;
+        pullMateriInternal(peranAktif);
       }
 
       function executeLogout() {
