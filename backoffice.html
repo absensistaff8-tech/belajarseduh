@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Backoffice | EGGY NUGRAHA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen overflow-hidden font-sans">
+
+  <!-- ================= LAYAR LOGIN ================= -->
+  <div id="loginOverlay" class="absolute inset-0 z-50 flex items-center justify-center p-6 bg-[url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center">
+    <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-0"></div>
+    <div class="relative z-10 w-full max-w-sm bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-black text-white tracking-tighter">BACK<span class="text-amber-500">OFFICE</span></h1>
+        <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-2 font-bold">Executive Control System</p>
+      </div>
+      <form onsubmit="otentikasi(event)" class="space-y-5">
+        <input type="password" id="pinBo" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] text-white focus:border-amber-500 outline-none" placeholder="PIN">
+        <button type="submit" id="btnBo" class="w-full bg-amber-500 text-slate-950 font-black tracking-widest uppercase py-3 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.2)]">Akses Sistem</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= LAYAR UTAMA ERP ================= -->
+  <div class="flex h-full w-full">
+    
+    <!-- SIDEBAR KIRI -->
+    <nav class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-40 hidden md:flex">
+      <div class="p-6 border-b border-slate-800">
+        <h1 class="text-xl font-black text-white tracking-tighter">EGGY<span class="text-amber-500">NUGRAHA</span></h1>
+        <span class="text-[9px] bg-emerald-950 text-emerald-500 px-2 py-0.5 rounded border border-emerald-900 font-bold uppercase tracking-wider">Authorized</span>
+      </div>
+      <div class="flex-1 p-4 space-y-2">
+        <button onclick="bukaTab('home')" class="w-full text-left px-4 py-3 rounded-lg font-bold text-xs uppercase tracking-wider text-slate-400 hover:bg-slate-800 hover:text-white transition">Home Dashboard</button>
+        <button onclick="bukaTab('menu')" class="w-full text-left px-4 py-3 rounded-lg font-bold text-xs uppercase tracking-wider text-slate-400 hover:bg-slate-800 hover:text-white transition">Data Menu</button>
+        <button onclick="bukaTab('bahan')" class="w-full text-left px-4 py-3 rounded-lg font-bold text-xs uppercase tracking-wider text-slate-400 hover:bg-slate-800 hover:text-white transition">Data Bahan Baku</button>
+        <button onclick="bukaTab('resep')" class="w-full text-left px-4 py-3 rounded-lg font-bold text-xs uppercase tracking-wider text-slate-400 hover:bg-slate-800 hover:text-white transition">Menu Engineering (Resep)</button>
+        <button onclick="bukaTab('hpp')" class="w-full text-left px-4 py-3 rounded-lg font-bold text-xs uppercase tracking-wider text-amber-500 bg-amber-950/20 border border-amber-900/50 transition">Analitik COGS</button>
+      </div>
+    </nav>
+
+    <!-- AREA KERJA UTAMA -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative bg-slate-950">
+      
+      <!-- MENU MOBILE TOGGLE -->
+      <button class="md:hidden mb-4 bg-slate-800 text-white px-4 py-2 rounded text-xs font-bold" onclick="alert('Buka di layar lebih lebar untuk kontrol penuh.')">Menu Toolbar</button>
+
+      <!-- TAB 1: HOME -->
+      <div id="tab-home" class="tab-konten hidden">
+        <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2">EXECUTIVE SUMMARY</h2>
+        <p class="text-slate-400 text-sm">Gunakan toolbar di sebelah kiri untuk menginput data master bahan baku, merancang struktur menu, dan memonitor margin HPP.</p>
+      </div>
+
+      <!-- TAB 2: DATA BAHAN BAKU -->
+      <div id="tab-bahan" class="tab-konten hidden">
+        <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2">MASTER BAHAN BAKU</h2>
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 max-w-xl">
+          <form onsubmit="simpanBahan(event)" class="space-y-4">
+            <input type="text" id="b_nama" placeholder="Nama Bahan (Cth: Susu Fresh Milk)" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+            <div class="grid grid-cols-2 gap-4">
+              <input type="number" id="b_harga" placeholder="Harga Kemasan (Rp)" required class="bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+              <input type="number" id="b_isi" placeholder="Total Isi Kemasan" required class="bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+            </div>
+            <select id="b_satuan" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+              <option value="">Pilih Satuan Terkecil</option>
+              <option value="ml">Mililiter (ml)</option>
+              <option value="gram">Gram (g)</option>
+              <option value="pcs">Pieces (pcs)</option>
+            </select>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded text-xs uppercase tracking-wider">Simpan Ke Gudang</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: DATA MENU -->
+      <div id="tab-menu" class="tab-konten hidden">
+        <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2">MASTER MENU POS</h2>
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 max-w-xl">
+          <form onsubmit="simpanMenu(event)" class="space-y-4">
+            <input type="text" id="m_nama" placeholder="Nama Menu (Cth: Iced Latte)" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+            <select id="m_kat" class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+              <option value="Coffee">Kategori: Coffee</option>
+              <option value="Non-Coffee">Kategori: Non-Coffee</option>
+              <option value="Food">Kategori: Food</option>
+            </select>
+            <div class="grid grid-cols-2 gap-4">
+              <input type="number" id="m_harga" placeholder="Harga Jual (Rp)" required class="bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+              <input type="number" id="m_maks" placeholder="Batas Cost Maks (%)" required class="bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded text-xs uppercase tracking-wider">Kunci Data Menu</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 4: DATA RESEP -->
+      <div id="tab-resep" class="tab-konten hidden">
+        <h2 class="text-2xl font-black mb-6 border-b border-slate-800 pb-2">ENGINEERING RESEP</h2>
+        <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 max-w-xl">
+          <p class="text-xs text-amber-500 mb-4 font-bold">Pilih menu, lalu masukkan bahan penyusunnya satu per satu.</p>
+          <form onsubmit="simpanResep(event)" class="space-y-4">
+            <select id="r_menu" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white font-bold text-amber-400">
+              <option value="">Memuat Daftar Menu...</option>
+            </select>
+            <select id="r_bahan" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+              <option value="">Memuat Daftar Bahan Baku...</option>
+            </select>
+            <input type="number" id="r_takaran" placeholder="Takaran (Contoh: 150 untuk 150ml)" required class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-sm text-white">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded text-xs uppercase tracking-wider">Suntik Bahan ke Resep</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 5: ANALITIK HPP (Menggunakan API cogs yang sudah ada) -->
+      <div id="tab-hpp" class="tab-konten">
+        <div class="flex justify-between items-end mb-6 border-b border-slate-800 pb-2">
+          <h2 class="text-2xl font-black">LAPORAN COGS AKTUAL</h2>
+          <button onclick="tarikDataCogs()" class="text-[10px] bg-slate-800 text-amber-500 font-bold px-3 py-1.5 rounded border border-slate-700 uppercase">Refresh Matrix</button>
+        </div>
+        <div id="cogsContainer" class="space-y-3"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // 1. SISTEM OTENTIKASI LOKAL (Menggunakan API LMS)
+    function otentikasi(e) {
+      e.preventDefault();
+      var pin = document.getElementById('pinBo').value;
+      fetch('/api/login', { method: 'POST', body: JSON.stringify({ pin: pin }) })
+      .then(res => res.json()).then(res => {
+        if(res.status && (res.peran === 'MANAGER' || res.peran === 'OWNER')) {
+          document.getElementById('loginOverlay').classList.add('hidden');
+          sinkronDropdown(); tarikDataCogs(); // Muat data di belakang layar
+        } else alert("Akses Ditolak. Level otorisasi tidak mencukupi.");
+      });
+    }
+
+    // 2. NAVIGASI TAB
+    function bukaTab(id) {
+      document.querySelectorAll('.tab-konten').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + id).classList.remove('hidden');
+      if(id === 'resep') sinkronDropdown();
+      if(id === 'hpp') tarikDataCogs();
+    }
+
+    // 3. SINKRONISASI DROPDOWN RESEP
+    function sinkronDropdown() {
+      fetch('/api/engine')
+      .then(r => r.json()).then(res => {
+        if(res.status) {
+          document.getElementById('r_menu').innerHTML = "<option value=''>-- Pilih Target Menu --</option>" + res.menu.map(m => `<option value="${m.id}">${m.nama_menu}</option>`).join('');
+          document.getElementById('r_bahan').innerHTML = "<option value=''>-- Pilih Bahan Baku --</option>" + res.bahan.map(b => `<option value="${b.id}">${b.nama_bahan} (${b.satuan_terkecil})</option>`).join('');
+        }
+      });
+    }
+
+    // 4. FUNGSI SIMPAN (Menembak ke API Engine)
+    function kirimData(aksi, payload, formEvent) {
+      formEvent.preventDefault();
+      formEvent.target.querySelector('button').innerText = "MENYIMPAN...";
+      fetch('/api/engine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aksi: aksi, payload: payload })
+      }).then(r => r.json()).then(res => {
+        alert(res.pesan);
+        formEvent.target.reset();
+        formEvent.target.querySelector('button').innerText = "SIMPAN DATA";
+      }).catch(err => alert("Gagal: " + err.message));
+    }
+
+    function simpanBahan(e) {
+      const payload = {
+        id: 'B-' + Math.floor(Math.random()*90000 + 10000), // Generate ID Unik B-XXXXX
+        nama_bahan: document.getElementById('b_nama').value,
+        harga_beli_kemasan: parseFloat(document.getElementById('b_harga').value),
+        isi_per_kemasan: parseFloat(document.getElementById('b_isi').value),
+        satuan_terkecil: document.getElementById('b_satuan').value
+      };
+      kirimData("ADD_BAHAN", payload, e);
+    }
+
+    function simpanMenu(e) {
+      const payload = {
+        id: 'M-' + Math.floor(Math.random()*90000 + 10000), // Generate ID Unik M-XXXXX
+        nama_menu: document.getElementById('m_nama').value,
+        kategori: document.getElementById('m_kat').value,
+        harga_jual: parseFloat(document.getElementById('m_harga').value),
+        target_cogs_maksimal: parseFloat(document.getElementById('m_maks').value)
+      };
+      kirimData("ADD_MENU", payload, e);
+    }
+
+    function simpanResep(e) {
+      const payload = {
+        menu_id: document.getElementById('r_menu').value,
+        bahan_id: document.getElementById('r_bahan').value,
+        takaran: parseFloat(document.getElementById('r_takaran').value)
+      };
+      kirimData("ADD_RESEP", payload, e);
+    }
+
+    // 5. TARIK LAPORAN HPP (Menggunakan script cogs lama yang di-embed ulang agar compact)
+    function tarikDataCogs() {
+      var k = document.getElementById('cogsContainer');
+      k.innerHTML = "<p class='text-xs text-slate-500 italic'>Kalkulasi server berjalan...</p>";
+      fetch('/api/cogs').then(r => r.json()).then(res => {
+        if(!res.status) return;
+        var html = "";
+        res.data.forEach(m => {
+          var bg = m.status === 'SEHAT' ? 'border-emerald-800 border-l-4 border-l-emerald-500' : 'border-red-800 border-l-4 border-l-red-500';
+          var text = m.status === 'SEHAT' ? 'text-emerald-500' : 'text-red-500';
+          html += `<div class="bg-slate-900 p-4 border rounded ${bg} flex justify-between items-center mb-2">
+            <div><p class="font-bold text-white">${m.nama_menu}</p><p class="text-xs text-slate-400">HPP: Rp ${m.total_hpp} | Jual: Rp ${m.harga_jual}</p></div>
+            <div class="text-right"><p class="text-xl font-black ${text}">${m.cogs_aktual_persen}%</p><p class="text-[9px] uppercase font-bold text-slate-500">Maks ${m.target_maks}%</p></div>
+          </div>`;
+        });
+        k.innerHTML = html;
+      });
+    }
+  </script>
+</body>
+</html>
